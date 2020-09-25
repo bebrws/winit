@@ -784,6 +784,15 @@ impl Window {
             inner: self.window.primary_monitor(),
         }
     }
+    #[inline]
+    pub fn set_moveable(&self) {
+        self.window.set_moveable()
+    }
+
+    #[inline]
+    pub fn set_not_moveable(&self)  {
+        self.window.set_not_moveable()
+    }
 }
 
 unsafe impl raw_window_handle::HasRawWindowHandle for Window {

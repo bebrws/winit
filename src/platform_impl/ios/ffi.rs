@@ -29,14 +29,14 @@ pub struct NSOperatingSystemVersion {
 }
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct CGPoint {
     pub x: CGFloat,
     pub y: CGFloat,
 }
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct CGSize {
     pub width: CGFloat,
     pub height: CGFloat,
@@ -52,7 +52,7 @@ impl CGSize {
 }
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct CGRect {
     pub origin: CGPoint,
     pub size: CGSize,
@@ -359,10 +359,7 @@ pub struct CFRunLoopSourceContext {
     pub perform: Option<extern "C" fn(*mut c_void)>,
 }
 
-// This is named NSStringRust rather than NSString because the "Debug View Heirarchy" feature of
-// Xcode requires a non-ambiguous reference to NSString for unclear reasons. This makes Xcode happy
-// so please test if you change the name back to NSString.
-pub trait NSStringRust: Sized {
+pub trait NSString: Sized {
     unsafe fn alloc(_: Self) -> id {
         msg_send![class!(NSString), alloc]
     }
@@ -373,7 +370,7 @@ pub trait NSStringRust: Sized {
     unsafe fn UTF8String(self) -> *const c_char;
 }
 
-impl NSStringRust for id {
+impl NSString for id {
     unsafe fn initWithUTF8String_(self, c_string: *const c_char) -> id {
         msg_send![self, initWithUTF8String: c_string as id]
     }

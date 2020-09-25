@@ -70,9 +70,8 @@ impl Window {
         //
         // done. you owe me -- ossi
         unsafe {
-            let drag_and_drop = pl_attr.drag_and_drop;
             init(w_attr, pl_attr, event_loop).map(|win| {
-                let file_drop_handler = if drag_and_drop {
+                let file_drop_handler = {
                     use winapi::shared::winerror::{OLE_E_WRONGCOMPOBJ, RPC_E_CHANGED_MODE, S_OK};
 
                     let ole_init_result = ole2::OleInitialize(ptr::null_mut());
@@ -81,11 +80,7 @@ impl Window {
                     if ole_init_result == OLE_E_WRONGCOMPOBJ {
                         panic!("OleInitialize failed! Result was: `OLE_E_WRONGCOMPOBJ`");
                     } else if ole_init_result == RPC_E_CHANGED_MODE {
-                        panic!(
-                            "OleInitialize failed! Result was: `RPC_E_CHANGED_MODE`. \
-                            Make sure other crates are not using multithreaded COM library \
-                            on the same thread or disable drag and drop support."
-                        );
+                        panic!("OleInitialize failed! Result was: `RPC_E_CHANGED_MODE`");
                     }
 
                     let file_drop_runner = event_loop.runner_shared.clone();
@@ -104,9 +99,7 @@ impl Window {
                         ole2::RegisterDragDrop(win.window.0, handler_interface_ptr),
                         S_OK
                     );
-                    Some(file_drop_handler)
-                } else {
-                    None
+                    file_drop_handler
                 };
 
                 let subclass_input = event_loop::SubclassInput {
@@ -496,12 +489,9 @@ impl Window {
             // Update window bounds
             match &fullscreen {
                 Some(fullscreen) => {
-                    let monitor = match &fullscreen {
-                        Fullscreen::Exclusive(video_mode) => video_mode.monitor(),
-                        Fullscreen::Borderless(Some(monitor)) => monitor.clone(),
-                        Fullscreen::Borderless(None) => RootMonitorHandle {
-                            inner: monitor::current_monitor(window.0),
-                        },
+                    let monitor = match fullscreen {
+                        Fullscreen::Exclusive(ref video_mode) => video_mode.monitor(),
+                        Fullscreen::Borderless(ref monitor) => monitor.clone(),
                     };
 
                     let position: (i32, i32) = monitor.position().into();
@@ -580,10 +570,10 @@ impl Window {
     }
 
     #[inline]
-    pub fn current_monitor(&self) -> Option<RootMonitorHandle> {
-        Some(RootMonitorHandle {
+    pub fn current_monitor(&self) -> RootMonitorHandle {
+        RootMonitorHandle {
             inner: monitor::current_monitor(self.window.0),
-        })
+        }
     }
 
     #[inline]
@@ -612,7 +602,7 @@ impl Window {
 
     #[inline]
     pub fn set_ime_position(&self, _position: Position) {
-        warn!("`Window::set_ime_position` is ignored on Windows")
+        unimplemented!();
     }
 
     #[inline]

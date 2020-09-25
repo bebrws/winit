@@ -37,7 +37,7 @@ use instant::Instant;
 use std::path::PathBuf;
 
 use crate::{
-    dpi::{PhysicalPosition, PhysicalSize},
+    dpi::{LogicalPosition, PhysicalPosition, PhysicalSize},
     platform_impl,
     window::{Theme, WindowId},
 };
@@ -764,7 +764,7 @@ pub enum MouseScrollDelta {
     /// Scroll events are expressed as a PixelDelta if
     /// supported by the device (eg. a touchpad) and
     /// platform.
-    PixelDelta(PhysicalPosition<f64>),
+    PixelDelta(LogicalPosition<f64>),
 }
 
 /// Symbolic name for a keyboard key.
@@ -892,20 +892,12 @@ pub enum VirtualKeyCode {
     Numpad7,
     Numpad8,
     Numpad9,
-    NumpadAdd,
-    NumpadDivide,
-    NumpadDecimal,
-    NumpadComma,
-    NumpadEnter,
-    NumpadEquals,
-    NumpadMultiply,
-    NumpadSubtract,
 
     AbntC1,
     AbntC2,
+    Add,
     Apostrophe,
     Apps,
-    Asterisk,
     At,
     Ax,
     Backslash,
@@ -914,6 +906,8 @@ pub enum VirtualKeyCode {
     Colon,
     Comma,
     Convert,
+    Decimal,
+    Divide,
     Equals,
     Grave,
     Kana,
@@ -927,6 +921,7 @@ pub enum VirtualKeyCode {
     MediaSelect,
     MediaStop,
     Minus,
+    Multiply,
     Mute,
     MyComputer,
     // also called "Next"
@@ -935,10 +930,12 @@ pub enum VirtualKeyCode {
     NavigateBackward,
     NextTrack,
     NoConvert,
+    NumpadComma,
+    NumpadEnter,
+    NumpadEquals,
     OEM102,
     Period,
     PlayPause,
-    Plus,
     Power,
     PrevTrack,
     RAlt,
@@ -950,6 +947,7 @@ pub enum VirtualKeyCode {
     Slash,
     Sleep,
     Stop,
+    Subtract,
     Sysrq,
     Tab,
     Underline,

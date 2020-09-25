@@ -1,4 +1,3 @@
-use simple_logger::SimpleLogger;
 use winit::{
     dpi::LogicalSize,
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
@@ -7,7 +6,7 @@ use winit::{
 };
 
 fn main() {
-    SimpleLogger::new().init().unwrap();
+    simple_logger::init().unwrap();
     let event_loop = EventLoop::new();
 
     let mut resizable = false;

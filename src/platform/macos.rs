@@ -56,12 +56,6 @@ pub trait WindowExtMacOS {
     /// And allows the user to have a fullscreen window without using another
     /// space or taking control over the entire monitor.
     fn set_simple_fullscreen(&self, fullscreen: bool) -> bool;
-
-    /// Returns whether or not the window has shadow.
-    fn has_shadow(&self) -> bool;
-
-    /// Sets whether or not the window has shadow.
-    fn set_has_shadow(&self, has_shadow: bool);
 }
 
 impl WindowExtMacOS for Window {
@@ -88,16 +82,6 @@ impl WindowExtMacOS for Window {
     #[inline]
     fn set_simple_fullscreen(&self, fullscreen: bool) -> bool {
         self.window.set_simple_fullscreen(fullscreen)
-    }
-
-    #[inline]
-    fn has_shadow(&self) -> bool {
-        self.window.has_shadow()
-    }
-
-    #[inline]
-    fn set_has_shadow(&self, has_shadow: bool) {
-        self.window.set_has_shadow(has_shadow)
     }
 }
 
@@ -147,7 +131,6 @@ pub trait WindowBuilderExtMacOS {
     /// Build window with `resizeIncrements` property. Values must not be 0.
     fn with_resize_increments(self, increments: LogicalSize<f64>) -> WindowBuilder;
     fn with_disallow_hidpi(self, disallow_hidpi: bool) -> WindowBuilder;
-    fn with_has_shadow(self, has_shadow: bool) -> WindowBuilder;
 }
 
 impl WindowBuilderExtMacOS for WindowBuilder {
@@ -207,12 +190,6 @@ impl WindowBuilderExtMacOS for WindowBuilder {
         self.platform_specific.disallow_hidpi = disallow_hidpi;
         self
     }
-
-    #[inline]
-    fn with_has_shadow(mut self, has_shadow: bool) -> WindowBuilder {
-        self.platform_specific.has_shadow = has_shadow;
-        self
-    }
 }
 
 /// Additional methods on `MonitorHandle` that are specific to MacOS.
@@ -238,8 +215,6 @@ impl MonitorHandleExtMacOS for MonitorHandle {
 pub trait EventLoopWindowTargetExtMacOS {
     /// Hide the entire application. In most applications this is typically triggered with Command-H.
     fn hide_application(&self);
-    /// Hide the other applications. In most applications this is typically triggered with Command+Option-H.
-    fn hide_other_applications(&self);
 }
 
 impl<T> EventLoopWindowTargetExtMacOS for EventLoopWindowTarget<T> {
@@ -247,11 +222,5 @@ impl<T> EventLoopWindowTargetExtMacOS for EventLoopWindowTarget<T> {
         let cls = objc::runtime::Class::get("NSApplication").unwrap();
         let app: cocoa::base::id = unsafe { msg_send![cls, sharedApplication] };
         unsafe { msg_send![app, hide: 0] }
-    }
-
-    fn hide_other_applications(&self) {
-        let cls = objc::runtime::Class::get("NSApplication").unwrap();
-        let app: cocoa::base::id = unsafe { msg_send![cls, sharedApplication] };
-        unsafe { msg_send![app, hideOtherApplications: 0] }
     }
 }

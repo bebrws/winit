@@ -11,7 +11,7 @@ use std::{
     io, mem, ptr,
 };
 
-use super::util;
+use super::{util, EventLoop};
 use crate::{
     dpi::{PhysicalPosition, PhysicalSize},
     monitor::{MonitorHandle as RootMonitorHandle, VideoMode as RootVideoMode},
@@ -126,14 +126,24 @@ pub fn current_monitor(hwnd: HWND) -> MonitorHandle {
     MonitorHandle::new(hmonitor)
 }
 
+impl<T> EventLoop<T> {
+    // TODO: Investigate opportunities for caching
+    pub fn available_monitors(&self) -> VecDeque<MonitorHandle> {
+        available_monitors()
+    }
+
+    pub fn primary_monitor(&self) -> MonitorHandle {
+        primary_monitor()
+    }
+}
+
 impl Window {
     pub fn available_monitors(&self) -> VecDeque<MonitorHandle> {
         available_monitors()
     }
 
-    pub fn primary_monitor(&self) -> Option<RootMonitorHandle> {
-        let monitor = primary_monitor();
-        Some(RootMonitorHandle { inner: monitor })
+    pub fn primary_monitor(&self) -> MonitorHandle {
+        primary_monitor()
     }
 }
 

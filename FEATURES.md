@@ -182,10 +182,8 @@ Legend:
 |Fullscreen                       |✔️     |✔️     |✔️         |✔️             |**N/A**|✔️     |✔️        |
 |Fullscreen toggle                |✔️     |✔️     |✔️         |✔️             |**N/A**|✔️     |✔️        |
 |Exclusive fullscreen             |✔️     |✔️     |✔️         |**N/A**         |❌    |✔️     |**N/A**|
-|HiDPI support                    |✔️     |✔️     |✔️         |✔️             |▢[#721]|✔️    |✔️ \*1|
+|HiDPI support                    |✔️     |✔️     |✔️         |✔️             |▢[#721]|✔️    |**N/A**|
 |Popup windows                    |❌     |❌     |❌         |❌             |❌    |❌     |**N/A**|
-
-\*1: `WindowEvent::ScaleFactorChanged` is not sent on `stdweb` backend.
 
 ### System information
 |Feature          |Windows|MacOS |Linux x11|Linux Wayland|Android|iOS      |WASM      |
@@ -200,9 +198,9 @@ Legend:
 |Mouse set location      |✔️       |✔️      |✔️       |❓           |**N/A**|**N/A**|**N/A**|
 |Cursor grab             |✔️       |▢[#165] |▢[#242]  |✔️         |**N/A**|**N/A**|❓        |
 |Cursor icon             |✔️       |✔️      |✔️       |✔️           |**N/A**|**N/A**|✔️        |
-|Touch events            |✔️       |❌      |✔️       |✔️          |✔️    |✔️     |❌        |
-|Touch pressure          |✔️       |❌      |❌       |❌          |❌    |✔️     |❌        |
-|Multitouch              |✔️       |❌      |✔️       |✔️          |❓     |✔️     |❌        |
+|Touch events            |✔️       |❌      |✔️       |✔️          |✔️    |✔️     |✔️        |
+|Touch pressure          |✔️       |❌      |❌       |❌          |❌    |✔️     |✔️        |
+|Multitouch              |✔️       |❌      |✔️       |✔️          |❓     |✔️     |✔️        |
 |Keyboard events         |✔️       |✔️      |✔️       |✔️          |❓     |❌     |✔️        |
 |Drag & Drop             |▢[#720]  |▢[#720] |▢[#720]  |❌[#306]    |**N/A**|**N/A**|❓        |
 |Raw Device Events       |▢[#750]  |▢[#750] |▢[#750]  |❌          |❌    |❌     |❓        |

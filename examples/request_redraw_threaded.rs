@@ -1,6 +1,5 @@
 use std::{thread, time};
 
-use simple_logger::SimpleLogger;
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -8,7 +7,7 @@ use winit::{
 };
 
 fn main() {
-    SimpleLogger::new().init().unwrap();
+    simple_logger::init().unwrap();
     let event_loop = EventLoop::new();
 
     let window = WindowBuilder::new()

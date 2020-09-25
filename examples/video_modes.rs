@@ -1,16 +1,9 @@
-use simple_logger::SimpleLogger;
 use winit::event_loop::EventLoop;
 
 fn main() {
-    SimpleLogger::new().init().unwrap();
+    simple_logger::init().unwrap();
     let event_loop = EventLoop::new();
-    let monitor = match event_loop.primary_monitor() {
-        Some(monitor) => monitor,
-        None => {
-            println!("No primary monitor detected.");
-            return;
-        }
-    };
+    let monitor = event_loop.primary_monitor();
 
     println!("Listing available video modes:");
 

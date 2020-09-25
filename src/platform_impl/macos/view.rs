@@ -915,11 +915,8 @@ fn mouse_motion(this: &Object, event: id) {
             || view_point.x > view_rect.size.width
             || view_point.y > view_rect.size.height
         {
-            let mouse_buttons_down: NSInteger = msg_send![class!(NSEvent), pressedMouseButtons];
-            if mouse_buttons_down == 0 {
-                // Point is outside of the client area (view) and no buttons are pressed
-                return;
-            }
+            // Point is outside of the client area (view)
+            return;
         }
 
         let x = view_point.x as f64;
@@ -999,15 +996,10 @@ extern "C" fn scroll_wheel(this: &Object, _sel: Sel, event: id) {
     mouse_motion(this, event);
 
     unsafe {
-        let state_ptr: *mut c_void = *this.get_ivar("winitState");
-        let state = &mut *(state_ptr as *mut ViewState);
-
         let delta = {
-            // macOS horizontal sign convention is the inverse of winit.
-            let (x, y) = (event.scrollingDeltaX() * -1.0, event.scrollingDeltaY());
+            let (x, y) = (event.scrollingDeltaX(), event.scrollingDeltaY());
             if event.hasPreciseScrollingDeltas() == YES {
-                let delta = LogicalPosition::new(x, y).to_physical(state.get_scale_factor());
-                MouseScrollDelta::PixelDelta(delta)
+                MouseScrollDelta::PixelDelta((x as f64, y as f64).into())
             } else {
                 MouseScrollDelta::LineDelta(x as f32, y as f32)
             }

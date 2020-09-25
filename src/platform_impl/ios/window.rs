@@ -43,6 +43,7 @@ impl Drop for Inner {
 }
 
 impl Inner {
+
     pub fn set_title(&self, _title: &str) {
         debug!("`Window::set_title` is ignored on iOS")
     }

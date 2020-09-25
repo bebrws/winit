@@ -998,6 +998,22 @@ impl UnownedWindow {
     }
 
     #[inline]
+    pub fn set_moveable(&self) {
+        unsafe { 
+            IdRef::new(self.ns_window() as *mut objc::runtime::Object).setMovableByWindowBackground_(YES);
+        }
+
+    }
+
+    #[inline]
+    pub fn set_not_moveable(&self) {
+        unsafe {
+            IdRef::new(self.ns_window() as *mut objc::runtime::Object).setMovableByWindowBackground_(NO);
+        }
+
+    }
+
+    #[inline]
     pub fn available_monitors(&self) -> VecDeque<MonitorHandle> {
         monitor::available_monitors()
     }

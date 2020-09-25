@@ -86,7 +86,7 @@ pub struct WindowBuilder {
     pub window: WindowAttributes,
 
     // Platform-specific configuration.
-    pub(crate) platform_specific: platform_impl::PlatformSpecificWindowBuilderAttributes,
+    pub platform_specific: platform_impl::PlatformSpecificWindowBuilderAttributes,
 }
 
 impl fmt::Debug for WindowBuilder {

@@ -15,9 +15,7 @@ use stdweb::web::event::{
     PointerOverEvent, PointerUpEvent,
 };
 use stdweb::web::html_element::CanvasElement;
-use stdweb::web::{
-    document, EventListenerHandle, IChildNode, IElement, IEventTarget, IHtmlElement,
-};
+use stdweb::web::{document, EventListenerHandle, IElement, IEventTarget, IHtmlElement};
 
 pub struct Canvas {
     /// Note: resizing the CanvasElement should go through `backend::set_canvas_size` to ensure the DPI factor is maintained.
@@ -161,6 +159,8 @@ impl Canvas {
         // viable/compatible alternative as of now. `beforeinput` is still widely
         // unsupported.
         self.on_received_character = Some(self.add_user_event(move |event: KeyPressEvent| {
+            // Supress further handling to stop keys like the space key from scrolling the page.
+            event.prevent_default();
             handler(event::codepoint(&event));
         }));
     }

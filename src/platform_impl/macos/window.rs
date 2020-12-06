@@ -16,7 +16,7 @@ use crate::{
     error::{ExternalError, NotSupportedError, OsError as RootOsError},
     icon::Icon,
     monitor::{MonitorHandle as RootMonitorHandle, VideoMode as RootVideoMode},
-    platform::macos::{ActivationPolicy, RequestUserAttentionType, WindowExtMacOS},
+    platform::macos::{ActivationPolicy, WindowExtMacOS},
     platform_impl::platform::{
         app_state::AppState,
         ffi,
@@ -27,7 +27,9 @@ use crate::{
         window_delegate::new_delegate,
         OsError,
     },
-    window::{CursorIcon, Fullscreen, WindowAttributes, WindowId as RootWindowId},
+    window::{
+        CursorIcon, Fullscreen, UserAttentionType, WindowAttributes, WindowId as RootWindowId,
+    },
 };
 use cocoa::{
     appkit::{
@@ -628,7 +630,7 @@ impl UnownedWindow {
             self.set_style_mask_async(curr_mask);
         }
 
-        is_zoomed != 0
+        is_zoomed != NO
     }
 
     fn saved_style(&self, shared_state: &mut SharedState) -> NSWindowStyleMask {
@@ -1010,18 +1012,6 @@ impl WindowExtMacOS for UnownedWindow {
     }
 
     #[inline]
-    fn request_user_attention(&self, request_type: RequestUserAttentionType) {
-        unsafe {
-            NSApp().requestUserAttention_(match request_type {
-                RequestUserAttentionType::Critical => NSRequestUserAttentionType::NSCriticalRequest,
-                RequestUserAttentionType::Informational => {
-                    NSRequestUserAttentionType::NSInformationalRequest
-                }
-            });
-        }
-    }
-
-    #[inline]
     fn simple_fullscreen(&self) -> bool {
         let shared_state_lock = self.shared_state.lock().unwrap();
         shared_state_lock.is_simple_fullscreen
@@ -1134,14 +1124,14 @@ unsafe fn set_min_inner_size<V: NSWindow + Copy>(window: V, mut min_size: Logica
     // If necessary, resize the window to match constraint
     if current_rect.size.width < min_size.width {
         current_rect.size.width = min_size.width;
-        window.setFrame_display_(current_rect, 0)
+        window.setFrame_display_(current_rect, NO)
     }
     if current_rect.size.height < min_size.height {
         // The origin point of a rectangle is at its bottom left in Cocoa.
         // To ensure the window's top-left point remains the same:
         current_rect.origin.y += current_rect.size.height - min_size.height;
         current_rect.size.height = min_size.height;
-        window.setFrame_display_(current_rect, 0)
+        window.setFrame_display_(current_rect, NO)
     }
 }
 
@@ -1158,13 +1148,13 @@ unsafe fn set_max_inner_size<V: NSWindow + Copy>(window: V, mut max_size: Logica
     // If necessary, resize the window to match constraint
     if current_rect.size.width > max_size.width {
         current_rect.size.width = max_size.width;
-        window.setFrame_display_(current_rect, 0)
+        window.setFrame_display_(current_rect, NO)
     }
     if current_rect.size.height > max_size.height {
         // The origin point of a rectangle is at its bottom left in Cocoa.
         // To ensure the window's top-left point remains the same:
         current_rect.origin.y += current_rect.size.height - max_size.height;
         current_rect.size.height = max_size.height;
-        window.setFrame_display_(current_rect, 0)
+        window.setFrame_display_(current_rect, NO)
     }
 }

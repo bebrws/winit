@@ -2,7 +2,9 @@ use crate::dpi::{LogicalSize, PhysicalPosition, PhysicalSize, Position, Size};
 use crate::error::{ExternalError, NotSupportedError, OsError as RootOE};
 use crate::icon::Icon;
 use crate::monitor::MonitorHandle as RootMH;
-use crate::window::{CursorIcon, Fullscreen, WindowAttributes, WindowId as RootWI};
+use crate::window::{
+    CursorIcon, Fullscreen, UserAttentionType, WindowAttributes, WindowId as RootWI,
+};
 
 use raw_window_handle::web::WebHandle;
 

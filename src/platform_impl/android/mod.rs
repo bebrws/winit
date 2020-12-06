@@ -110,42 +110,65 @@ impl<T: 'static> EventLoop<T> {
                             event_handler(event, self.window_target(), &mut cf);
                         }
                     }
+                    Event::WindowHasFocus => {
+                        call_event_handler!(
+                            event_handler,
+                            self.window_target(),
+                            control_flow,
+                            event::Event::WindowEvent {
+                                window_id: window::WindowId(WindowId),
+                                event: event::WindowEvent::Focused(true),
+                            }
+                        );
+                    }
+                    Event::WindowLostFocus => {
+                        call_event_handler!(
+                            event_handler,
+                            self.window_target(),
+                            control_flow,
+                            event::Event::WindowEvent {
+                                window_id: window::WindowId(WindowId),
+                                event: event::WindowEvent::Focused(false),
+                            }
+                        );
+                    }
                     _ => {}
                 },
                 Some(EventSource::InputQueue) => {
                     if let Some(input_queue) = ndk_glue::input_queue().as_ref() {
                         while let Some(event) = input_queue.get_event() {
-                            println!("event {:?}", event);
                             if let Some(event) = input_queue.pre_dispatch(event) {
                                 let window_id = window::WindowId(WindowId);
                                 let device_id = event::DeviceId(DeviceId);
                                 match &event {
                                     InputEvent::MotionEvent(motion_event) => {
                                         let phase = match motion_event.action() {
-                                            MotionAction::Down => Some(event::TouchPhase::Started),
-                                            MotionAction::Up => Some(event::TouchPhase::Ended),
+                                            MotionAction::Down | MotionAction::PointerDown => {
+                                                Some(event::TouchPhase::Started)
+                                            }
+                                            MotionAction::Up | MotionAction::PointerUp => {
+                                                Some(event::TouchPhase::Ended)
+                                            }
                                             MotionAction::Move => Some(event::TouchPhase::Moved),
                                             MotionAction::Cancel => {
                                                 Some(event::TouchPhase::Cancelled)
                                             }
                                             _ => None, // TODO mouse events
                                         };
-                                        let pointer = motion_event.pointer_at_index(0);
-                                        let location = PhysicalPosition {
-                                            x: pointer.x() as _,
-                                            y: pointer.y() as _,
-                                        };
-
                                         if let Some(phase) = phase {
-                                            let event = event::Event::WindowEvent {
-                                                window_id,
-                                                event: event::WindowEvent::Touch(event::Touch {
-                                                    device_id,
-                                                    phase,
-                                                    location,
-                                                    id: 0,
-                                                    force: None,
-                                                }),
+                                            let pointers: Box<
+                                                dyn Iterator<Item = ndk::event::Pointer<'_>>,
+                                            > = match phase {
+                                                event::TouchPhase::Started
+                                                | event::TouchPhase::Ended => Box::new(
+                                                    std::iter::once(motion_event.pointer_at_index(
+                                                        motion_event.pointer_index(),
+                                                    )),
+                                                ),
+                                                event::TouchPhase::Moved
+                                                | event::TouchPhase::Cancelled => {
+                                                    Box::new(motion_event.pointers())
+                                                }
                                             };
                                             event_handler(event, self.window_target(), &mut cf);
                                         }
@@ -395,6 +418,8 @@ impl Window {
 
     pub fn set_ime_position(&self, _position: Position) {}
 
+    pub fn request_user_attention(&self, _request_type: Option<window::UserAttentionType>) {}
+
     pub fn set_cursor_icon(&self, _: window::CursorIcon) {}
 
     pub fn set_cursor_position(&self, _: Position) -> Result<(), error::ExternalError> {
@@ -415,7 +440,7 @@ impl Window {
         let a_native_window = if let Some(native_window) = ndk_glue::native_window().as_ref() {
             unsafe { native_window.ptr().as_mut() as *mut _ as *mut _ }
         } else {
-            panic!("native window null");
+            panic!("Cannot get the native window, it's null and will always be null before Event::Resumed and after Event::Suspended. Make sure you only call this function between those events.");
         };
         let mut handle = raw_window_handle::android::AndroidHandle::empty();
         handle.a_native_window = a_native_window;

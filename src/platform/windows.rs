@@ -13,7 +13,7 @@ use crate::{
     event_loop::EventLoop,
     monitor::MonitorHandle,
     platform_impl::{EventLoop as WindowsEventLoop, WinIcon},
-    window::{BadIcon, Icon, Window, WindowBuilder},
+    window::{BadIcon, Icon, Theme, Window, WindowBuilder},
 };
 
 /// Additional methods on `EventLoop` that are specific to Windows.
@@ -81,8 +81,8 @@ pub trait WindowExtWindows {
     /// This sets `ICON_BIG`. A good ceiling here is 256x256.
     fn set_taskbar_icon(&self, taskbar_icon: Option<Icon>);
 
-    /// Whether the system theme is currently Windows 10's "Dark Mode".
-    fn is_dark_mode(&self) -> bool;
+    /// Returns the current window theme.
+    fn theme(&self) -> Theme;
 }
 
 impl WindowExtWindows for Window {
@@ -102,8 +102,8 @@ impl WindowExtWindows for Window {
     }
 
     #[inline]
-    fn is_dark_mode(&self) -> bool {
-        self.window.is_dark_mode()
+    fn theme(&self) -> Theme {
+        self.window.theme()
     }
 }
 

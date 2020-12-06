@@ -34,7 +34,7 @@ use crate::{
     event::{DeviceEvent, Event, Force, KeyboardInput, Touch, TouchPhase, WindowEvent},
     event_loop::{ControlFlow, EventLoopClosed, EventLoopWindowTarget as RootELW},
     platform_impl::platform::{
-        dark_mode::try_dark_mode,
+        dark_mode::try_theme,
         dpi::{become_dpi_aware, dpi_to_scale_factor, enable_non_client_dpi_scaling},
         drop_handler::FileDropHandler,
         event::{self, handle_extended_keys, process_key_params, vkey_to_winit_vkey},
@@ -797,7 +797,10 @@ unsafe extern "system" fn public_window_callback<T: 'static>(
                 event: Destroyed,
             });
             subclass_input.event_loop_runner.remove_window(window);
+            0
+        }
 
+        winuser::WM_NCDESTROY => {
             drop(subclass_input);
             Box::from_raw(subclass_input_ptr as *mut SubclassInput<T>);
             0
@@ -1855,20 +1858,20 @@ unsafe extern "system" fn public_window_callback<T: 'static>(
         winuser::WM_SETTINGCHANGE => {
             use crate::event::WindowEvent::ThemeChanged;
 
-            let is_dark_mode = try_dark_mode(window);
-            let mut window_state = subclass_input.window_state.lock();
-            let changed = window_state.is_dark_mode != is_dark_mode;
+            let preferred_theme = subclass_input.window_state.lock().preferred_theme;
 
-            if changed {
-                use crate::window::Theme::*;
-                let theme = if is_dark_mode { Dark } else { Light };
+            if preferred_theme == None {
+                let new_theme = try_theme(window, preferred_theme);
+                let mut window_state = subclass_input.window_state.lock();
 
-                window_state.is_dark_mode = is_dark_mode;
-                mem::drop(window_state);
-                subclass_input.send_event(Event::WindowEvent {
-                    window_id: RootWindowId(WindowId(window)),
-                    event: ThemeChanged(theme),
-                });
+                if window_state.current_theme != new_theme {
+                    window_state.current_theme = new_theme;
+                    mem::drop(window_state);
+                    subclass_input.send_event(Event::WindowEvent {
+                        window_id: RootWindowId(WindowId(window)),
+                        event: ThemeChanged(new_theme),
+                    });
+                }
             }
 
             commctrl::DefSubclassProc(window, msg, wparam, lparam)
@@ -1943,7 +1946,8 @@ unsafe extern "system" fn thread_event_target_callback<T: 'static>(
                 process_control_flow(&subclass_input.event_loop_runner);
             }
 
-            0
+            // Default WM_PAINT behaviour. This makes sure modals and popups are shown immediatly when opening them.
+            commctrl::DefSubclassProc(window, msg, wparam, lparam)
         }
 
         winuser::WM_INPUT_DEVICE_CHANGE => {

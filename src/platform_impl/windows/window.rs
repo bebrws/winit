@@ -23,7 +23,6 @@ use winapi::{
         ole2,
         oleidl::LPDROPTARGET,
         shobjidl_core::{CLSID_TaskbarList, ITaskbarList2},
-        wingdi::{CreateRectRgn, DeleteObject},
         winnt::LPCWSTR,
         winuser,
     },
@@ -35,7 +34,7 @@ use crate::{
     icon::Icon,
     monitor::MonitorHandle as RootMonitorHandle,
     platform_impl::platform::{
-        dark_mode::try_dark_mode,
+        dark_mode::try_theme,
         dpi::{dpi_to_scale_factor, hwnd_dpi},
         drop_handler::FileDropHandler,
         event_loop::{self, EventLoopWindowTarget, DESTROY_MSG_ID},
@@ -44,7 +43,7 @@ use crate::{
         window_state::{CursorFlags, SavedWindow, WindowFlags, WindowState},
         PlatformSpecificWindowBuilderAttributes, WindowId,
     },
-    window::{CursorIcon, Fullscreen, WindowAttributes},
+    window::{CursorIcon, Fullscreen, Theme, UserAttentionType, WindowAttributes},
 };
 
 /// The Win32 implementation of the main `Window` object.
@@ -483,7 +482,14 @@ impl Window {
 
             // Update window style
             WindowState::set_window_flags(window_state_lock, window.0, |f| {
-                f.set(WindowFlags::MARKER_FULLSCREEN, fullscreen.is_some())
+                f.set(
+                    WindowFlags::MARKER_EXCLUSIVE_FULLSCREEN,
+                    matches!(fullscreen, Some(Fullscreen::Exclusive(_))),
+                );
+                f.set(
+                    WindowFlags::MARKER_BORDERLESS_FULLSCREEN,
+                    matches!(fullscreen, Some(Fullscreen::Borderless(_))),
+                );
             });
 
             // Update window bounds
@@ -606,8 +612,39 @@ impl Window {
     }
 
     #[inline]
-    pub fn is_dark_mode(&self) -> bool {
-        self.window_state.lock().is_dark_mode
+    pub fn request_user_attention(&self, request_type: Option<UserAttentionType>) {
+        let window = self.window.clone();
+        let active_window_handle = unsafe { winuser::GetActiveWindow() };
+        if window.0 == active_window_handle {
+            return;
+        }
+
+        self.thread_executor.execute_in_thread(move || unsafe {
+            let (flags, count) = request_type
+                .map(|ty| match ty {
+                    UserAttentionType::Critical => {
+                        (winuser::FLASHW_ALL | winuser::FLASHW_TIMERNOFG, u32::MAX)
+                    }
+                    UserAttentionType::Informational => {
+                        (winuser::FLASHW_TRAY | winuser::FLASHW_TIMERNOFG, 0)
+                    }
+                })
+                .unwrap_or((winuser::FLASHW_STOP, 0));
+
+            let mut flash_info = winuser::FLASHWINFO {
+                cbSize: mem::size_of::<winuser::FLASHWINFO>() as UINT,
+                hwnd: window.0,
+                dwFlags: flags,
+                uCount: count,
+                dwTimeout: 0,
+            };
+            winuser::FlashWindowEx(&mut flash_info);
+        });
+    }
+
+    #[inline]
+    pub fn theme(&self) -> Theme {
+        self.window_state.lock().current_theme
     }
 }
 
@@ -698,47 +735,34 @@ unsafe fn init<T: 'static>(
 
     // making the window transparent
     if attributes.transparent && !pl_attribs.no_redirection_bitmap {
-        let region = CreateRectRgn(0, 0, -1, -1); // makes the window transparent
-
         let bb = dwmapi::DWM_BLURBEHIND {
-            dwFlags: dwmapi::DWM_BB_ENABLE | dwmapi::DWM_BB_BLURREGION,
+            dwFlags: dwmapi::DWM_BB_ENABLE,
             fEnable: 1,
-            hRgnBlur: region,
+            hRgnBlur: ptr::null_mut(),
             fTransitionOnMaximized: 0,
         };
 
         dwmapi::DwmEnableBlurBehindWindow(real_window.0, &bb);
-        DeleteObject(region as _);
 
         if attributes.decorations {
-            // HACK: When opaque (opacity 255), there is a trail whenever
-            // the transparent window is moved. By reducing it to 254,
-            // the window is rendered properly.
-            let opacity = 254;
+            let opacity = 255;
 
-            // The color key can be any value except for black (0x0).
-            let color_key = 0x0030c100;
-
-            winuser::SetLayeredWindowAttributes(
-                real_window.0,
-                color_key,
-                opacity,
-                winuser::LWA_ALPHA,
-            );
+            winuser::SetLayeredWindowAttributes(real_window.0, 0, opacity, winuser::LWA_ALPHA);
         }
     }
 
     // If the system theme is dark, we need to set the window theme now
     // before we update the window flags (and possibly show the
     // window for the first time).
-    let dark_mode = try_dark_mode(real_window.0);
+    let current_theme = try_theme(real_window.0, pl_attribs.preferred_theme);
 
     let window_state = {
         let window_state = WindowState::new(
             &attributes,
             pl_attribs.taskbar_icon,
             scale_factor,
-            dark_mode,
+            current_theme,
+            pl_attribs.preferred_theme,
         );
         let window_state = Arc::new(Mutex::new(window_state));
         WindowState::set_window_flags(window_state.lock(), real_window.0, |f| *f = window_flags);

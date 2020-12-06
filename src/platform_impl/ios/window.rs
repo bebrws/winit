@@ -22,7 +22,9 @@ use crate::{
         },
         monitor, view, EventLoopWindowTarget, MonitorHandle,
     },
-    window::{CursorIcon, Fullscreen, WindowAttributes, WindowId as RootWindowId},
+    window::{
+        CursorIcon, Fullscreen, UserAttentionType, WindowAttributes, WindowId as RootWindowId,
+    },
 };
 
 pub struct Inner {
